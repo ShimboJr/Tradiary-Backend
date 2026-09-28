@@ -1,0 +1,38 @@
+{
+  "name": "tradiary-server",
+  "version": "1.0.0",
+  "description": "Tradiary API — professional trading journal backend",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "tradiary",
+    "trading-journal",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@react-oauth/google": "^0.13.5",
+    "bcrypt": "^5.1.1",
+    "cloudinary": "^2.5.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "express-validator": "^7.2.0",
+    "google-auth-library": "^9.14.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.4",
+    "multer": "^2.0.0",
+    "nodemailer": "^10.0.12"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
