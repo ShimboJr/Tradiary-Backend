@@ -26,8 +26,9 @@ const template = (body) => `
       <table width="560" cellpadding="0" cellspacing="0" style="background:#131920;border-radius:12px;border:1px solid #1e2a38;overflow:hidden;">
         <!-- Header -->
         <tr><td style="background:#1a2332;padding:24px 32px;border-bottom:1px solid #1e2a38;">
-          <span style="font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;">
-            📈 Tradiary
+          <span style="display:inline-flex;align-items:center;gap:10px;font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;">
+            <img src="https://tradiary.vercel.app/favicon.svg" width="28" height="28" alt="Tradiary" style="display:inline-block;vertical-align:middle;border-radius:6px;" />
+            Tradiary
           </span>
         </td></tr>
         <!-- Body -->
