@@ -29,11 +29,33 @@ const template = (body) => `
           <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
             <tr>
               <td style="vertical-align:middle;padding-right:10px;">
-                <!-- Pure-CSS icon: works in all email clients, no external image needed -->
-                <span style="display:inline-block;width:30px;height:30px;background:#3b8ef3;border-radius:7px;text-align:center;line-height:30px;font-size:16px;font-weight:900;color:#fff;font-family:Inter,Arial,sans-serif;vertical-align:middle;">T</span>
+                <!-- Tradiary brand icon — inline SVG (Gmail, Apple Mail, Outlook.com, Yahoo Mail) -->
+                <!-- Outlook for Windows ignores SVG; the colored-T fallback below handles it -->
+                <!--[if !mso]><!-->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="34" height="34" style="display:block;" role="img" aria-label="Tradiary">
+                  <defs>
+                    <linearGradient id="tg" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stop-color="#5B6CFF"/>
+                      <stop offset="1" stop-color="#22D3EE"/>
+                    </linearGradient>
+                  </defs>
+                  <!-- Rounded background square -->
+                  <rect width="64" height="64" rx="15" fill="url(#tg)"/>
+                  <!-- T crossbar -->
+                  <rect x="14" y="14" width="36" height="9" rx="4.5" fill="white"/>
+                  <!-- T stem / candlestick body -->
+                  <rect x="26" y="18" width="12" height="27" rx="3.5" fill="white"/>
+                  <!-- Candlestick wick tail -->
+                  <line x1="32" y1="44" x2="32" y2="52" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+                </svg>
+                <!--<![endif]-->
+                <!--[if mso]>
+                <span style="display:inline-block;width:34px;height:34px;background:#5B6CFF;border-radius:8px;text-align:center;line-height:34px;font-size:17px;font-weight:900;color:#fff;font-family:Arial,sans-serif;">T</span>
+                <![endif]-->
               </td>
-              <td style="vertical-align:middle;font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;font-family:Inter,Arial,sans-serif;">
-                Tradiary
+              <!-- Wordmark: "Tra" white, "diary" cyan — matching the brand spec -->
+              <td style="vertical-align:middle;font-size:20px;font-weight:700;letter-spacing:-0.5px;font-family:Inter,Arial,sans-serif;">
+                <span style="color:#E6EBF5;">Tra</span><span style="color:#22D3EE;">diary</span>
               </td>
             </tr>
           </table>
@@ -45,7 +67,7 @@ const template = (body) => `
         <!-- Footer -->
         <tr><td style="padding:20px 32px;border-top:1px solid #1e2a38;font-size:12px;color:#4a5568;">
           © ${new Date().getFullYear()} Tradiary · Free professional trading journal<br/>
-          <span style="color:#2a6ef5;">tradairy.vercel.app</span>
+          <span style="color:#5B6CFF;">tradairy.vercel.app</span>
         </td></tr>
       </table>
     </td></tr>
