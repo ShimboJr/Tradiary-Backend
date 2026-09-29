@@ -7,6 +7,17 @@ const User    = require('../models/User');
 const Trade   = require('../models/Trade');
 const { sendSuccess, sendError } = require('../utils/response');
 
+// ── Password strength guard (mirrors client-side Zod schema) ──────────────────
+// Must have: ≥8 chars, ≥1 uppercase, ≥1 digit, ≥1 special character.
+const isStrongPassword = (pw) =>
+  pw.length >= 8 &&
+  /[A-Z]/.test(pw) &&
+  /\d/.test(pw) &&
+  /[^a-zA-Z0-9]/.test(pw);
+
+const WEAK_PASSWORD_MSG =
+  'Password must be at least 8 characters and include an uppercase letter, a number, and a special character.';
+
 // ── Update profile ────────────────────────────────────────────────────────────
 exports.updateProfile = async (req, res, next) => {
   try {
@@ -47,8 +58,8 @@ exports.changePassword = async (req, res, next) => {
     const valid = await user.verifyPassword(currentPassword);
     if (!valid) return sendError(res, 401, 'Current password is incorrect.', 'INVALID_PASSWORD');
 
-    if (newPassword.length < 8) {
-      return sendError(res, 400, 'New password must be at least 8 characters.', 'VALIDATION_ERROR');
+    if (!isStrongPassword(newPassword)) {
+      return sendError(res, 400, WEAK_PASSWORD_MSG, 'VALIDATION_ERROR');
     }
 
     await user.setPassword(newPassword);
@@ -66,8 +77,8 @@ exports.changePassword = async (req, res, next) => {
 exports.setPassword = async (req, res, next) => {
   try {
     const { newPassword } = req.body;
-    if (!newPassword || newPassword.length < 8) {
-      return sendError(res, 400, 'Password must be at least 8 characters.', 'VALIDATION_ERROR');
+    if (!newPassword || !isStrongPassword(newPassword)) {
+      return sendError(res, 400, WEAK_PASSWORD_MSG, 'VALIDATION_ERROR');
     }
 
     const user = await User.findById(req.user.id);
