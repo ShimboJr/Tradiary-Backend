@@ -4,13 +4,32 @@
  * Drop-in replacement — same exported functions as before.
  */
 
+const fs   = require('fs');
+const path = require('path');
 const { Brevo } = require('@getbrevo/brevo');
 const { getMailer } = require('../config/mailer');
 
 const FROM_EMAIL = process.env.EMAIL_FROM_ADDRESS || 'noreply@tradiary.app';
-const FROM_NAME = process.env.EMAIL_FROM_NAME || 'Tradiary';
+const FROM_NAME  = process.env.EMAIL_FROM_NAME  || 'Tradiary';
 
-// ─── Base HTML template ───────────────────────────────────────────────────────
+// ─── Brand icon (base64 PNG) ──────────────────────────────────────────────────
+// Loaded once at startup. PNG data URI works in Gmail (Android/iOS/Web),
+// Apple Mail, Outlook.com, Outlook for Windows, Yahoo Mail — unlike SVG.
+let ICON_DATA_URI = '';
+try {
+  const iconPath = path.resolve(__dirname, '../assets/icon-email.png');
+  const iconB64  = fs.readFileSync(iconPath).toString('base64');
+  ICON_DATA_URI  = `data:image/png;base64,${iconB64}`;
+} catch {
+  // Asset missing — will use CSS text fallback
+}
+
+// Icon HTML: <img> when PNG loaded, plain text span as fallback
+const ICON_HTML = ICON_DATA_URI
+  ? `<img src="${ICON_DATA_URI}" width="34" height="34" alt="Tradiary" style="display:block;border:0;outline:none;text-decoration:none;"/>`
+  : `<span style="display:inline-block;width:34px;height:34px;background:#5B6CFF;border-radius:8px;text-align:center;line-height:34px;font-size:17px;font-weight:900;color:#fff;font-family:Arial,sans-serif;">T</span>`;
+
+// ─── Base HTML template ───────────────────────────────────────────────────────────
 
 const template = (body) => `
 <!DOCTYPE html>
@@ -29,29 +48,7 @@ const template = (body) => `
           <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
             <tr>
               <td style="vertical-align:middle;padding-right:10px;">
-                <!-- Tradiary brand icon — inline SVG (Gmail, Apple Mail, Outlook.com, Yahoo Mail) -->
-                <!-- Outlook for Windows ignores SVG; the colored-T fallback below handles it -->
-                <!--[if !mso]><!-->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="34" height="34" style="display:block;" role="img" aria-label="Tradiary">
-                  <defs>
-                    <linearGradient id="tg" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0" stop-color="#5B6CFF"/>
-                      <stop offset="1" stop-color="#22D3EE"/>
-                    </linearGradient>
-                  </defs>
-                  <!-- Rounded background square -->
-                  <rect width="64" height="64" rx="15" fill="url(#tg)"/>
-                  <!-- T crossbar -->
-                  <rect x="14" y="14" width="36" height="9" rx="4.5" fill="white"/>
-                  <!-- T stem / candlestick body -->
-                  <rect x="26" y="18" width="12" height="27" rx="3.5" fill="white"/>
-                  <!-- Candlestick wick tail -->
-                  <line x1="32" y1="44" x2="32" y2="52" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
-                </svg>
-                <!--<![endif]-->
-                <!--[if mso]>
-                <span style="display:inline-block;width:34px;height:34px;background:#5B6CFF;border-radius:8px;text-align:center;line-height:34px;font-size:17px;font-weight:900;color:#fff;font-family:Arial,sans-serif;">T</span>
-                <![endif]-->
+                ${ICON_HTML}
               </td>
               <!-- Wordmark: "Tra" white, "diary" cyan — matching the brand spec -->
               <td style="vertical-align:middle;font-size:20px;font-weight:700;letter-spacing:-0.5px;font-family:Inter,Arial,sans-serif;">
