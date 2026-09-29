@@ -4,32 +4,34 @@
  * Drop-in replacement — same exported functions as before.
  */
 
-const fs   = require('fs');
-const path = require('path');
 const { Brevo } = require('@getbrevo/brevo');
 const { getMailer } = require('../config/mailer');
 
 const FROM_EMAIL = process.env.EMAIL_FROM_ADDRESS || 'noreply@tradiary.app';
-const FROM_NAME  = process.env.EMAIL_FROM_NAME  || 'Tradiary';
+const FROM_NAME  = process.env.EMAIL_FROM_NAME    || 'Tradiary';
 
-// ─── Brand icon (base64 PNG) ──────────────────────────────────────────────────
-// Loaded once at startup. PNG data URI works in Gmail (Android/iOS/Web),
-// Apple Mail, Outlook.com, Outlook for Windows, Yahoo Mail — unlike SVG.
-let ICON_DATA_URI = '';
-try {
-  const iconPath = path.resolve(__dirname, '../assets/icon-email.png');
-  const iconB64  = fs.readFileSync(iconPath).toString('base64');
-  ICON_DATA_URI  = `data:image/png;base64,${iconB64}`;
-} catch {
-  // Asset missing — will use CSS text fallback
-}
+// ─── Brand icon ───────────────────────────────────────────────────────────────
+// Strategy: use a hosted <img> URL so all email clients (including Gmail Web,
+// which blocks data: URIs) can load it. CLIENT_ORIGIN must be the deployed
+// frontend URL (e.g. https://tradiary.app) — already required for CORS.
+//
+// In development (CLIENT_ORIGIN = http://localhost:…) we fall back to a
+// pure-CSS coloured "T" square — no broken image placeholder ever appears.
 
-// Icon HTML: <img> when PNG loaded, plain text span as fallback
-const ICON_HTML = ICON_DATA_URI
-  ? `<img src="${ICON_DATA_URI}" width="34" height="34" alt="Tradiary" style="display:block;border:0;outline:none;text-decoration:none;"/>`
-  : `<span style="display:inline-block;width:34px;height:34px;background:#5B6CFF;border-radius:8px;text-align:center;line-height:34px;font-size:17px;font-weight:900;color:#fff;font-family:Arial,sans-serif;">T</span>`;
+const _siteOrigin = (process.env.CLIENT_ORIGIN || '').split(',')[0].trim().replace(/\/$/, '');
+const _useHosted   = _siteOrigin.startsWith('https://');
 
-// ─── Base HTML template ───────────────────────────────────────────────────────────
+// CSS-only fallback: works in every email client, needs no image loading
+const _CSS_ICON = `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;display:inline-table;">` +
+  `<tr><td width="34" height="34" bgcolor="#5B6CFF" style="border-radius:8px;text-align:center;vertical-align:middle;` +
+  `font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:900;color:#ffffff;line-height:34px;">T</td></tr></table>`;
+
+const ICON_HTML = _useHosted
+  ? `<img src="${_siteOrigin}/icon-192.png" width="34" height="34" alt="Tradiary" ` +
+    `style="display:block;border:0;outline:none;text-decoration:none;" />`
+  : _CSS_ICON;
+
+// ─── Base HTML template ────────────────────────────────────────────────────────
 
 const template = (body) => `
 <!DOCTYPE html>
