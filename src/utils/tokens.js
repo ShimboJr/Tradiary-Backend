@@ -43,18 +43,21 @@ const setRefreshCookie = (res, token, remember = true) => {
   const isProd = process.env.NODE_ENV === 'production';
   res.cookie(REFRESH_COOKIE_NAME, token, {
     httpOnly: true,
+    // SameSite=None + Secure=true required for cross-origin cookie (Vercel ↔ Render).
+    // In dev (localhost) use Lax + no Secure so it works without HTTPS.
     secure: isProd,
-    sameSite: 'strict',
+    sameSite: isProd ? 'none' : 'lax',
     path: '/api/auth/refresh', // scope cookie to the refresh endpoint only
     ...(remember ? { maxAge: 30 * 24 * 60 * 60 * 1000 } : {}), // 30 days or session
   });
 };
 
 const clearRefreshCookie = (res) => {
+  const isProd = process.env.NODE_ENV === 'production';
   res.clearCookie(REFRESH_COOKIE_NAME, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     path: '/api/auth/refresh',
   });
 };
