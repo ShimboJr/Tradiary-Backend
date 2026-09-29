@@ -1,6 +1,12 @@
 /**
  * config/mailer.js
- * Nodemailer transporter — configure once, export for use in utils/email.js.
+ * Nodemailer transporter — Brevo (smtp-relay.brevo.com) SMTP.
+ * Brevo resolves to IPv4 only, making it compatible with Render's free tier.
+ *
+ * Required env vars:
+ *   SMTP_USER  — your Brevo account login email
+ *   SMTP_PASS  — your Brevo SMTP key (Settings → SMTP & API → SMTP Keys)
+ *   EMAIL_FROM — display name + sender address, e.g. "Tradiary <noreply@yourdomain.com>"
  */
 
 const nodemailer = require('nodemailer');
@@ -11,16 +17,13 @@ const getMailer = () => {
   if (transporter) return transporter;
 
   transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true',
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false, // STARTTLS on port 587
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: process.env.SMTP_USER, // your Brevo account email
+      pass: process.env.SMTP_PASS, // your Brevo SMTP key (not account password)
     },
-    // Force IPv4: Render's free tier has no IPv6 routing, so resolving
-    // smtp.gmail.com to an IPv6 address causes ENETUNREACH immediately.
-    family: 4,
   });
 
   console.log('[mailer] ✅  Nodemailer transporter ready.');

@@ -59,7 +59,7 @@ const note = (text) =>
 const sendEmail = async ({ to, subject, html, text }) => {
   const isDev = process.env.NODE_ENV !== 'production';
 
-  if (isDev && !process.env.SMTP_HOST) {
+  if (isDev && !process.env.SMTP_USER) {
     // Dev fallback: print to console so the scaffold works without SMTP
     console.log(`\n[email] ✉️  DEV — Would send to: ${to}`);
     console.log(`[email] Subject: ${subject}`);
