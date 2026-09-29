@@ -16,7 +16,7 @@ const {
   generateOpaqueToken,
   hashOpaqueToken,
 } = require('../utils/tokens');
-const { sendVerificationEmail, sendPasswordResetEmail } = require('../utils/email');
+const { sendVerificationEmail, sendPasswordResetEmail, sendPasswordChangedEmail } = require('../utils/email');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -351,6 +351,11 @@ exports.resetPassword = async (req, res, next) => {
 
     await user.save();
     clearRefreshCookie(res);
+
+    // Notify the user their password was changed (non-blocking)
+    sendPasswordChangedEmail(user.email, user.name).catch((err) =>
+      console.error('[auth] Failed to send password-changed email:', err.message)
+    );
 
     return sendSuccess(res, 200, null, 'Password updated. Please sign in with your new password.');
   } catch (err) {

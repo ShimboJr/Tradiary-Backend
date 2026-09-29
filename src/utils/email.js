@@ -117,5 +117,16 @@ const sendPasswordResetEmail = (to, name, resetUrl) =>
       note(`If you didn't request a password reset, you can safely ignore this email. Your password won't change.`)
     ),
   });
+const sendPasswordChangedEmail = (to, name) =>
+  sendEmail({
+    to,
+    subject: 'Your Tradiary password has been changed',
+    html: template(
+      h('Password changed successfully') +
+      p(`Hi ${name}, this is a confirmation that the password for your Tradiary account (<strong>${to}</strong>) was just changed.`) +
+      p(`If you made this change, no further action is needed.`) +
+      note(`If you did not change your password, your account may be compromised. Please <a href="${process.env.CLIENT_ORIGIN || 'http://localhost:5173'}/forgot-password" style="color:#2a6ef5;">reset your password immediately</a> or contact support.`)
+    ),
+  });
 
-module.exports = { sendEmail, sendVerificationEmail, sendPasswordResetEmail };
+module.exports = { sendEmail, sendVerificationEmail, sendPasswordResetEmail, sendPasswordChangedEmail };
