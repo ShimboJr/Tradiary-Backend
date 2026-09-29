@@ -6,15 +6,36 @@ const mongoose = require('mongoose');
 const Goal     = require('../models/Goal');
 const Trade    = require('../models/Trade');
 const { sendSuccess, sendError } = require('../utils/response');
-const { startOfWeek, startOfMonth, endOfWeek, endOfMonth } = require('date-fns');
+
+// ─── Native date helpers (no external dependency) ─────────────────────────────
+function _startOfWeek(d) {          // Monday start
+  const date = new Date(d);
+  const day  = date.getDay();        // 0=Sun … 6=Sat
+  const diff = day === 0 ? -6 : 1 - day;
+  date.setDate(date.getDate() + diff);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+function _endOfWeek(d) {            // Sunday end
+  const end = new Date(_startOfWeek(d));
+  end.setDate(end.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return end;
+}
+function _startOfMonth(d) {
+  return new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
+}
+function _endOfMonth(d) {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+}
 
 // ─── Compute current period date range for a goal ─────────────────────────────
 function periodRange(goal) {
   const now = new Date();
   if (goal.period === 'weekly') {
-    return { $gte: startOfWeek(now, { weekStartsOn: 1 }), $lte: endOfWeek(now, { weekStartsOn: 1 }) };
+    return { $gte: _startOfWeek(now), $lte: _endOfWeek(now) };
   }
-  return { $gte: startOfMonth(now), $lte: endOfMonth(now) };
+  return { $gte: _startOfMonth(now), $lte: _endOfMonth(now) };
 }
 
 // ─── Compute the live value for a single goal ─────────────────────────────────
