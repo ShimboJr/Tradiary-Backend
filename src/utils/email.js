@@ -34,7 +34,7 @@ const template = (body) => `
         <!-- Footer -->
         <tr><td style="padding:20px 32px;border-top:1px solid #1e2a38;font-size:12px;color:#4a5568;">
           © ${new Date().getFullYear()} Tradiary · Free professional trading journal<br/>
-          <span style="color:#2a6ef5;">tradiary.app</span>
+          <span style="color:#2a6ef5;">tradairy.vercel.app</span>
         </td></tr>
       </table>
     </td></tr>
