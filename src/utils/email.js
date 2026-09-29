@@ -26,10 +26,17 @@ const template = (body) => `
       <table width="560" cellpadding="0" cellspacing="0" style="background:#131920;border-radius:12px;border:1px solid #1e2a38;overflow:hidden;">
         <!-- Header -->
         <tr><td style="background:#1a2332;padding:24px 32px;border-bottom:1px solid #1e2a38;">
-          <span style="display:inline-flex;align-items:center;gap:10px;font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;">
-            <img src="https://tradiary.vercel.app/favicon.svg" width="28" height="28" alt="Tradiary" style="display:inline-block;vertical-align:middle;border-radius:6px;" />
-            Tradiary
-          </span>
+          <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+            <tr>
+              <td style="vertical-align:middle;padding-right:10px;">
+                <!-- Pure-CSS icon: works in all email clients, no external image needed -->
+                <span style="display:inline-block;width:30px;height:30px;background:#3b8ef3;border-radius:7px;text-align:center;line-height:30px;font-size:16px;font-weight:900;color:#fff;font-family:Inter,Arial,sans-serif;vertical-align:middle;">T</span>
+              </td>
+              <td style="vertical-align:middle;font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;font-family:Inter,Arial,sans-serif;">
+                Tradiary
+              </td>
+            </tr>
+          </table>
         </td></tr>
         <!-- Body -->
         <tr><td style="padding:32px;">
