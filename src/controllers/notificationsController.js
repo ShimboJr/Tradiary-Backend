@@ -8,7 +8,7 @@ const { sendSuccess, sendError } = require('../utils/response');
 /** GET /api/notifications — latest 30, unread first */
 exports.list = async (req, res, next) => {
   try {
-    const items = await Notification.find({ userId: req.user.userId })
+    const items = await Notification.find({ userId: req.user.id })
       .sort({ read: 1, createdAt: -1 })
       .limit(30)
       .lean();
@@ -22,7 +22,7 @@ exports.list = async (req, res, next) => {
 exports.markRead = async (req, res, next) => {
   try {
     const n = await Notification.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.userId },
+      { _id: req.params.id, userId: req.user.id },
       { read: true },
       { new: true }
     );
@@ -37,7 +37,7 @@ exports.markRead = async (req, res, next) => {
 exports.markAllRead = async (req, res, next) => {
   try {
     await Notification.updateMany(
-      { userId: req.user.userId, read: false },
+      { userId: req.user.id, read: false },
       { read: true }
     );
     return sendSuccess(res, 200, null, 'All notifications marked as read.');

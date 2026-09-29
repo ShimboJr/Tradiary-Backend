@@ -77,7 +77,7 @@ function computeStats(trades) {
 
 exports.generatePdf = async (req, res, next) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const { from, to } = req.query;
 
     const user = await User.findById(userId);
@@ -281,12 +281,12 @@ exports.generateTradeCard = async (req, res, next) => {
   try {
     const trade = await Trade.findOne({
       _id: req.params.tradeId,
-      userId: req.user.userId,
+      userId: req.user.id,
     }).lean();
 
     if (!trade) return sendError(res, 404, 'Trade not found.', 'NOT_FOUND');
 
-    const user     = await User.findById(req.user.userId).lean();
+    const user     = await User.findById(req.user.id).lean();
     const currency = user?.baseCurrency || 'USD';
     const pnl      = trade.pnl;
     const isGain   = pnl != null && pnl >= 0;

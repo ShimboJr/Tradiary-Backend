@@ -17,7 +17,7 @@ exports.updateProfile = async (req, res, next) => {
     }
 
     const user = await User.findByIdAndUpdate(
-      req.user.userId,
+      req.user.id,
       { $set: updates },
       { new: true, runValidators: true }
     );
@@ -37,7 +37,7 @@ exports.changePassword = async (req, res, next) => {
       return sendError(res, 400, 'currentPassword and newPassword are required.', 'VALIDATION_ERROR');
     }
 
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.user.id);
     if (!user) return sendError(res, 404, 'User not found.', 'NOT_FOUND');
 
     if (!user.authProviders.includes('local')) {
@@ -70,7 +70,7 @@ exports.setPassword = async (req, res, next) => {
       return sendError(res, 400, 'Password must be at least 8 characters.', 'VALIDATION_ERROR');
     }
 
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.user.id);
     if (!user) return sendError(res, 404, 'User not found.', 'NOT_FOUND');
 
     if (user.authProviders.includes('local')) {
@@ -92,7 +92,7 @@ exports.setPassword = async (req, res, next) => {
 // ── Export all data ───────────────────────────────────────────────────────────
 exports.exportData = async (req, res, next) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const user   = await User.findById(userId).lean();
     if (!user) return sendError(res, 404, 'User not found.', 'NOT_FOUND');
 
@@ -143,7 +143,7 @@ exports.exportData = async (req, res, next) => {
 // ── Delete account (GDPR — full cascade) ─────────────────────────────────────
 exports.deleteAccount = async (req, res, next) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     // Import all models for cascade delete
     const JournalEntry   = require('../models/JournalEntry');
