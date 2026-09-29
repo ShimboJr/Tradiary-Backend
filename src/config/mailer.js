@@ -18,6 +18,9 @@ const getMailer = () => {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+    // Force IPv4: Render's free tier has no IPv6 routing, so resolving
+    // smtp.gmail.com to an IPv6 address causes ENETUNREACH immediately.
+    family: 4,
   });
 
   console.log('[mailer] ✅  Nodemailer transporter ready.');

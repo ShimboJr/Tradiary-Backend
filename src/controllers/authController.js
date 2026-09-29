@@ -286,7 +286,9 @@ exports.resendVerification = async (req, res, next) => {
     await user.save();
 
     const verifyUrl = `${CLIENT}/verify-email/${raw}`;
-    await sendVerificationEmail(user.email, user.name, verifyUrl);
+    await sendVerificationEmail(user.email, user.name, verifyUrl).catch((err) =>
+      console.error('[auth] Failed to send verification email:', err.message)
+    );
 
     return sendSuccess(res, 200, null, 'Verification email sent.');
   } catch (err) {
