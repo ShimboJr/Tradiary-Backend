@@ -1,6 +1,7 @@
 /**
  * models/Trade.js
  * Core trade document. pnl and rMultiple are computed and stored on every save.
+ * Extended with: mistakes[], rulesFollowed[], disciplineScore.
  */
 
 const mongoose = require('mongoose');
@@ -123,6 +124,24 @@ const tradeSchema = new mongoose.Schema(
     notes: {
       type: String,
       default: '',
+    },
+
+    // ── Mistakes (multi-select from standard list + custom) ──────────────────
+    mistakes: {
+      type: [String],
+      default: [],
+    },
+
+    // ── Strategy rules followed (IDs from Strategy.rules[].id) ───────────────
+    rulesFollowed: {
+      type: [mongoose.Schema.Types.ObjectId],
+      default: [],
+    },
+
+    // ── Discipline score: % of strategy rules followed (0–100) ───────────────
+    disciplineScore: {
+      type: Number,
+      default: null,
     },
   },
   { timestamps: true }

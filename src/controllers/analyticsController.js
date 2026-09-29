@@ -339,3 +339,40 @@ exports.summary = async (req, res, next) => {
     });
   } catch (err) { next(err); }
 };
+
+// ─── Mistakes summary ─────────────────────────────────────────────────────────
+// GET /api/analytics/mistakes
+
+exports.mistakesSummary = async (req, res, next) => {
+  try {
+    const filter = buildFilter(req.user.id, req.query);
+    // Remove status filter so open trades with mistakes are also counted
+    delete filter.status;
+
+    const result = await Trade.aggregate([
+      { $match: { ...filter, mistakes: { $exists: true, $ne: [] } } },
+      { $unwind: '$mistakes' },
+      {
+        $group: {
+          _id:   '$mistakes',
+          count: { $sum: 1 },
+          pnl:   { $sum: '$pnl' },
+          wins:  { $sum: { $cond: [{ $gt: ['$pnl', 0] }, 1, 0] } },
+        },
+      },
+      { $sort: { count: -1 } },
+      {
+        $project: {
+          mistake:    '$_id',
+          count:      1,
+          pnl:        1,
+          winRate:    { $multiply: [{ $cond: ['$count', { $divide: ['$wins', '$count'] }, 0] }, 100] },
+          _id:        0,
+        },
+      },
+    ]);
+
+    return sendSuccess(res, 200, result);
+  } catch (err) { next(err); }
+};
+

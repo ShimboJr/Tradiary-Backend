@@ -3,8 +3,12 @@
  * Barrel export for all Mongoose models.
  */
 
-const User    = require('./User');
-const Account = require('./Account');
-const Trade   = require('./Trade');
+const User          = require('./User');
+const Account       = require('./Account');
+const Trade         = require('./Trade');
+const Strategy      = require('./Strategy');
+const JournalEntry  = require('./JournalEntry');
+const Goal          = require('./Goal');
+const WatchlistItem = require('./WatchlistItem');
 
-module.exports = { User, Account, Trade };
+module.exports = { User, Account, Trade, Strategy, JournalEntry, Goal, WatchlistItem };

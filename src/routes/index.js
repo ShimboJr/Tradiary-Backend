@@ -1,23 +1,26 @@
-/**
- * routes/index.js
- * Central router — mounts all feature routers under /api.
- */
-
 const express = require('express');
-const healthRouter   = require('./health');
-const authRouter     = require('./auth');
-const accountsRouter = require('./accounts');
-const tradesRouter   = require('./trades');
-const uploadsRouter  = require('./uploads');
-const analyticsRouter= require('./analytics');
+const healthRouter    = require('./health');
+const authRouter      = require('./auth');
+const accountsRouter  = require('./accounts');
+const tradesRouter    = require('./trades');
+const uploadsRouter   = require('./uploads');
+const analyticsRouter = require('./analytics');
+const strategiesRouter= require('./strategies');
+const journalRouter   = require('./journal');
+const goalsRouter     = require('./goals');
+const watchlistRouter = require('./watchlist');
 
 const router = express.Router();
 
-router.use('/health',    healthRouter);
-router.use('/auth',      authRouter);
-router.use('/accounts',  accountsRouter);
-router.use('/trades',    tradesRouter);
-router.use('/uploads',   uploadsRouter);
-router.use('/analytics', analyticsRouter);
+router.use('/health',      healthRouter);
+router.use('/auth',        authRouter);
+router.use('/accounts',    accountsRouter);
+router.use('/trades',      tradesRouter);
+router.use('/uploads',     uploadsRouter);
+router.use('/analytics',   analyticsRouter);
+router.use('/strategies',  strategiesRouter);
+router.use('/journal',     journalRouter);
+router.use('/goals',       goalsRouter);
+router.use('/watchlist',   watchlistRouter);
 
 module.exports = router;
