@@ -5,26 +5,48 @@
  * all wired here so server.js stays thin (just starts listening).
  */
 
-const express = require('express');
-const helmet = require('helmet');
-const cors = require('cors');
+'use strict';
+
+const express      = require('express');
+const helmet       = require('helmet');
+const cors         = require('cors');
+const morgan       = require('morgan');
 const { globalLimiter } = require('./middleware/rateLimiter');
 const errorHandler = require('./middleware/errorHandler');
-const apiRouter = require('./routes/index');
+const apiRouter    = require('./routes/index');
+const { registerWeeklySummaryJob } = require('./jobs/weeklyNotification');
 
-const app = express();
+const app  = express();
+const isProd = process.env.NODE_ENV === 'production';
 
 // ─── Security ─────────────────────────────────────────────────────────────────
 app.use(helmet());
 
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim());
+
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
-    credentials: true, // needed for httpOnly refresh-token cookie
+    origin: (origin, cb) => {
+      // Allow requests with no origin (mobile apps, curl, health checks)
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      cb(new Error(`CORS: origin ${origin} not allowed.`));
+    },
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
+
+// ─── Logging (verbose in dev, minimal in prod) ────────────────────────────────
+if (isProd) {
+  // Minimal Apache-style — only logs status + response time
+  app.use(morgan('tiny'));
+} else {
+  app.use(morgan('dev'));
+}
 
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
 app.use(globalLimiter);
@@ -33,7 +55,7 @@ app.use(globalLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ─── Cookie Parser (for refresh token cookie) ─────────────────────────────────
+// ─── Cookie Parser ────────────────────────────────────────────────────────────
 app.use(require('cookie-parser')());
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
@@ -49,5 +71,9 @@ app.use((req, res) => {
 
 // ─── Global Error Handler (must be last) ──────────────────────────────────────
 app.use(errorHandler);
+
+// ─── Background Jobs ──────────────────────────────────────────────────────────
+// Register cron jobs after all middleware is set up
+registerWeeklySummaryJob();
 
 module.exports = app;

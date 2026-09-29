@@ -284,3 +284,78 @@ exports.calendarData = async (req, res, next) => {
     return sendSuccess(res, 200, days);
   } catch (err) { next(err); }
 };
+
+// ─── Seed sample trades (onboarding) ─────────────────────────────────────────
+
+const SAMPLE_TRADES = [
+  { symbol:'AAPL',  assetClass:'stock',   direction:'long',  entryDate:-12, exitDays:3,  entryPrice:175.20, exitPrice:182.50, quantity:20, stopLoss:170.00, fees:0 },
+  { symbol:'TSLA',  assetClass:'stock',   direction:'short', entryDate:-10, exitDays:2,  entryPrice:245.00, exitPrice:258.40, quantity:10, stopLoss:252.00, fees:0 },
+  { symbol:'EURUSD',assetClass:'forex',   direction:'long',  entryDate:-9,  exitDays:1,  entryPrice:1.0850, exitPrice:1.0920, quantity:10000, stopLoss:1.0800, fees:2 },
+  { symbol:'SPY',   assetClass:'stock',   direction:'long',  entryDate:-8,  exitDays:4,  entryPrice:448.30, exitPrice:456.00, quantity:15, stopLoss:443.00, fees:0 },
+  { symbol:'BTCUSD',assetClass:'crypto',  direction:'long',  entryDate:-7,  exitDays:2,  entryPrice:42000,  exitPrice:44200,  quantity:0.5, stopLoss:40500, fees:10 },
+  { symbol:'NVDA',  assetClass:'stock',   direction:'long',  entryDate:-6,  exitDays:3,  entryPrice:460.00, exitPrice:448.00, quantity:8, stopLoss:452.00, fees:0 },
+  { symbol:'QQQ',   assetClass:'stock',   direction:'short', entryDate:-5,  exitDays:1,  entryPrice:380.00, exitPrice:373.50, quantity:20, stopLoss:384.00, fees:0 },
+  { symbol:'AMZN',  assetClass:'stock',   direction:'long',  entryDate:-4,  exitDays:2,  entryPrice:178.50, exitPrice:185.20, quantity:12, stopLoss:174.00, fees:0 },
+  { symbol:'GBPUSD',assetClass:'forex',   direction:'short', entryDate:-3,  exitDays:1,  entryPrice:1.2720, exitPrice:1.2660, quantity:10000, stopLoss:1.2760, fees:2 },
+  { symbol:'MSFT',  assetClass:'stock',   direction:'long',  entryDate:-2,  exitDays:1,  entryPrice:378.00, exitPrice:390.00, quantity:10, stopLoss:372.00, fees:0 },
+];
+
+exports.seedSamples = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    // Don't double-seed
+    const existing = await Trade.countDocuments({ userId, isSample: true });
+    if (existing > 0) {
+      return sendSuccess(res, 200, null, 'Sample trades already present.');
+    }
+
+    // Need at least one account — find or skip
+    const account = await Account.findOne({ userId });
+    if (!account) {
+      return sendError(res, 400, 'Please create a trading account first.', 'NO_ACCOUNT');
+    }
+
+    const now = new Date();
+    const trades = SAMPLE_TRADES.map(s => {
+      const entryDate = new Date(now);
+      entryDate.setDate(entryDate.getDate() + s.entryDate);
+      entryDate.setHours(9, 30, 0, 0);
+      const exitDate = new Date(entryDate);
+      exitDate.setDate(exitDate.getDate() + s.exitDays);
+      exitDate.setHours(15, 30, 0, 0);
+
+      return {
+        userId,
+        accountId: account._id,
+        symbol:      s.symbol,
+        assetClass:  s.assetClass,
+        direction:   s.direction,
+        entryDate,
+        exitDate,
+        entryPrice:  s.entryPrice,
+        exitPrice:   s.exitPrice,
+        quantity:    s.quantity,
+        stopLoss:    s.stopLoss,
+        fees:        s.fees,
+        status:      'closed',
+        tags:        ['sample'],
+        notes:       'Sample trade — created by Tradiary onboarding. Safe to delete.',
+        isSample:    true,
+      };
+    });
+
+    await Trade.insertMany(trades);
+    return sendSuccess(res, 201, null, '10 sample trades seeded.');
+  } catch (err) { next(err); }
+};
+
+// ─── Clear sample trades ──────────────────────────────────────────────────────
+
+exports.clearSamples = async (req, res, next) => {
+  try {
+    const result = await Trade.deleteMany({ userId: req.user.id, isSample: true });
+    return sendSuccess(res, 200, { deleted: result.deletedCount }, 'Sample trades cleared.');
+  } catch (err) { next(err); }
+};
+

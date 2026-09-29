@@ -8,14 +8,16 @@ const ctrl = require('../controllers/tradeController');
 const router = express.Router();
 router.use(requireAuth);
 
-// Specific named routes before :id
-router.get('/export',      ctrl.exportCsv);
-router.get('/calendar',    ctrl.calendarData);
-router.post('/bulk-delete', ctrl.bulkDelete);
-router.post('/bulk-tag',    ctrl.bulkTag);
-router.post('/import',      ctrl.importCsv);
+// ── Named routes (before :id) ─────────────────────────────────────────────────
+router.get('/export',          ctrl.exportCsv);
+router.get('/calendar',        ctrl.calendarData);
+router.post('/bulk-delete',    ctrl.bulkDelete);
+router.post('/bulk-tag',       ctrl.bulkTag);
+router.post('/import',         ctrl.importCsv);
+router.post('/seed-samples',   ctrl.seedSamples);
+router.delete('/clear-samples',ctrl.clearSamples);
 
-// Standard CRUD
+// ── Standard CRUD ──────────────────────────────────────────────────────────────
 router.get('/',        ctrl.list);
 router.post('/',       ctrl.create);
 router.get('/:id',     ctrl.detail);

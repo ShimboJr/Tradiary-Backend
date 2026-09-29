@@ -143,6 +143,13 @@ const tradeSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
+
+    // ── Sample data flag (seeded during onboarding) ───────────────────────────
+    isSample: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
   },
   { timestamps: true }
 );
