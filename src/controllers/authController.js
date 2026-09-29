@@ -267,7 +267,26 @@ exports.logout = async (req, res, next) => {
   }
 };
 
+// ─── Logout all devices ───────────────────────────────────────────────────────
+// Increments tokenVersion, instantly invalidating every refresh token issued
+// for this account. Protected — requires a valid access token (requireAuth).
+
+exports.logoutAll = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return sendError(res, 404, 'User not found.', 'NOT_FOUND');
+
+    await user.invalidateTokens(); // bumps tokenVersion → all existing refresh tokens rejected
+    clearRefreshCookie(res);       // also wipe this device's cookie
+
+    return sendSuccess(res, 200, null, 'Signed out of all devices.');
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ─── Get current user (me) ────────────────────────────────────────────────────
+
 
 exports.getMe = async (req, res, next) => {
   try {

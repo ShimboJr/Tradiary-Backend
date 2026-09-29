@@ -10,6 +10,7 @@ const {
   googleAuth,
   refresh,
   logout,
+  logoutAll,
   getMe,
   verifyEmail,
   resendVerification,
@@ -45,7 +46,8 @@ router.post('/forgot-password', forgotPasswordLimiter, forgotPasswordValidators,
 router.post('/reset-password/:token', resetPasswordValidators, validate, resetPassword);
 
 // ── Protected ─────────────────────────────────────────────────────────────────
-router.get ('/me',               requireAuth, getMe);
+router.get ('/me',                  requireAuth, getMe);
 router.post('/resend-verification', requireAuth, resendVerification);
+router.post('/logout-all',          requireAuth, logoutAll);
 
 module.exports = router;
