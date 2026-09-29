@@ -5,7 +5,8 @@
  */
 
 const { OAuth2Client } = require('google-auth-library');
-const User = require('../models/User');
+const User    = require('../models/User');
+const Account = require('../models/Account');
 const { sendSuccess, sendError } = require('../utils/response');
 const {
   generateAccessToken,
@@ -80,6 +81,15 @@ exports.register = async (req, res, next) => {
     await sendVerificationEmail(user.email, user.name, verifyUrl).catch((err) =>
       console.error('[auth] Failed to send verification email:', err.message)
     );
+
+    // Seed a default trading account for the new user
+    await Account.create({
+      userId: user._id,
+      name: 'Main Account',
+      type: 'live',
+      currency: user.baseCurrency || 'USD',
+      isDefault: true,
+    }).catch(() => {}); // non-blocking, ignore if fails
 
     const session = issueSession(res, user);
     return sendSuccess(res, 201, session, 'Account created! Please verify your email.');
@@ -162,6 +172,14 @@ exports.googleAuth = async (req, res, next) => {
         authProviders: ['google'],
         isEmailVerified: true, // Google already verified it
       });
+      // Seed default account for new Google user
+      await Account.create({
+        userId: user._id,
+        name: 'Main Account',
+        type: 'live',
+        currency: 'USD',
+        isDefault: true,
+      }).catch(() => {});
     }
 
     const session = issueSession(res, user);

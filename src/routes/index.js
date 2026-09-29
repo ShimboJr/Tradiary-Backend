@@ -4,17 +4,18 @@
  */
 
 const express = require('express');
-const healthRouter = require('./health');
-const authRouter   = require('./auth');
-// Future routes:
-// const tradesRouter = require('./trades');
-// const usersRouter  = require('./users');
+const healthRouter   = require('./health');
+const authRouter     = require('./auth');
+const accountsRouter = require('./accounts');
+const tradesRouter   = require('./trades');
+const uploadsRouter  = require('./uploads');
 
 const router = express.Router();
 
-router.use('/health', healthRouter);
-router.use('/auth',   authRouter);
-// router.use('/trades', tradesRouter);
-// router.use('/users',  usersRouter);
+router.use('/health',   healthRouter);
+router.use('/auth',     authRouter);
+router.use('/accounts', accountsRouter);
+router.use('/trades',   tradesRouter);
+router.use('/uploads',  uploadsRouter);
 
 module.exports = router;
