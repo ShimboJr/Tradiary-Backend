@@ -21,6 +21,18 @@ const { sendVerificationEmail, sendPasswordResetEmail, sendPasswordChangedEmail 
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// ── Password strength guard (mirrors client-side Zod / SettingsPage rules) ────
+const isStrongPassword = (pw) =>
+  typeof pw === 'string' &&
+  pw.length >= 8 &&
+  /[A-Z]/.test(pw) &&
+  /[a-z]/.test(pw) &&
+  /\d/.test(pw) &&
+  /[^a-zA-Z0-9]/.test(pw);
+
+const STRONG_PASSWORD_MSG =
+  'Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character.';
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const CLIENT = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
@@ -60,6 +72,10 @@ const issueSession = (res, user, remember = true) => {
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
+
+    if (!isStrongPassword(password)) {
+      return sendError(res, 400, STRONG_PASSWORD_MSG, 'WEAK_PASSWORD');
+    }
 
     const existing = await User.findOne({ email });
     if (existing) {
