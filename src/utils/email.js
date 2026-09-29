@@ -1,13 +1,16 @@
 /**
- * utils/email.js  (replaced from scaffold)
- * Email sending helpers with styled HTML templates.
+ * utils/email.js
+ * Email sending helpers using Brevo Transactional Email API (HTTPS).
+ * Drop-in replacement — same exported functions as before.
  */
 
+const { Brevo } = require('@getbrevo/brevo');
 const { getMailer } = require('../config/mailer');
 
-const FROM = process.env.EMAIL_FROM || '"Tradiary" <noreply@tradiary.app>';
+const FROM_EMAIL = process.env.EMAIL_FROM_ADDRESS || 'noreply@tradiary.app';
+const FROM_NAME = process.env.EMAIL_FROM_NAME || 'Tradiary';
 
-// ─── Base template ────────────────────────────────────────────────────────────
+// ─── Base HTML template ───────────────────────────────────────────────────────
 
 const template = (body) => `
 <!DOCTYPE html>
@@ -59,24 +62,26 @@ const note = (text) =>
 const sendEmail = async ({ to, subject, html, text }) => {
   const isDev = process.env.NODE_ENV !== 'production';
 
-  if (isDev && !process.env.SMTP_USER) {
-    // Dev fallback: print to console so the scaffold works without SMTP
+  if (isDev && !process.env.BREVO_API_KEY) {
+    // Dev fallback: log to console when no API key is configured
     console.log(`\n[email] ✉️  DEV — Would send to: ${to}`);
     console.log(`[email] Subject: ${subject}`);
     console.log(`[email] Body (text): ${text || html.replace(/<[^>]*>/g, '').trim().slice(0, 300)}\n`);
     return { messageId: 'dev-console' };
   }
 
-  const transporter = getMailer();
-  const info = await transporter.sendMail({
-    from: FROM,
-    to,
+  const brevoClient = getMailer();
+
+  const result = await brevoClient.transactionalEmails.sendTransacEmail({
+    sender: { name: FROM_NAME, email: FROM_EMAIL },
+    to: [{ email: to }],
     subject,
-    html,
-    text: text || html.replace(/<[^>]*>/g, '').trim(),
+    htmlContent: html,
+    textContent: text || html.replace(/<[^>]*>/g, '').trim(),
   });
-  console.log(`[email] Sent: ${info.messageId}`);
-  return info;
+
+  console.log(`[email] Sent via Brevo API: ${result.body?.messageId || 'ok'}`);
+  return result;
 };
 
 // ─── Email templates ──────────────────────────────────────────────────────────

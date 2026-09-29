@@ -1,33 +1,24 @@
 /**
  * config/mailer.js
- * Nodemailer transporter — Brevo (smtp-relay.brevo.com) SMTP.
- * Brevo resolves to IPv4 only, making it compatible with Render's free tier.
+ * Brevo Transactional Email API client (new @getbrevo/brevo SDK).
+ * Uses HTTPS (port 443) — works on Render free tier and any host.
+ * No SMTP involved; outbound port 587/465 restrictions are irrelevant.
  *
- * Required env vars:
- *   SMTP_USER  — your Brevo account login email
- *   SMTP_PASS  — your Brevo SMTP key (Settings → SMTP & API → SMTP Keys)
- *   EMAIL_FROM — display name + sender address, e.g. "Tradiary <noreply@yourdomain.com>"
+ * Required env var:
+ *   BREVO_API_KEY — Brevo dashboard → Settings → SMTP & API → API Keys → Create a new API key
  */
 
-const nodemailer = require('nodemailer');
+const { BrevoClient } = require('@getbrevo/brevo');
 
-let transporter;
+let client;
 
 const getMailer = () => {
-  if (transporter) return transporter;
+  if (client) return client;
 
-  transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    secure: false, // STARTTLS on port 587
-    auth: {
-      user: process.env.SMTP_USER, // your Brevo account email
-      pass: process.env.SMTP_PASS, // your Brevo SMTP key (not account password)
-    },
-  });
+  client = new BrevoClient({ apiKey: process.env.BREVO_API_KEY });
 
-  console.log('[mailer] ✅  Nodemailer transporter ready.');
-  return transporter;
+  console.log('[mailer] ✅  Brevo API client ready.');
+  return client;
 };
 
 module.exports = { getMailer };

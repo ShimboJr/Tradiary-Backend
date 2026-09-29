@@ -16,6 +16,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@getbrevo/brevo": "^6.0.3",
     "@react-oauth/google": "^0.13.5",
     "bcrypt": "^5.1.1",
     "cloudinary": "^2.5.1",
