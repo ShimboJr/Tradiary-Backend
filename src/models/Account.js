@@ -19,6 +19,11 @@ const accountSchema = new mongoose.Schema(
       trim: true,
       maxlength: [80, 'Account name cannot exceed 80 characters.'],
     },
+    accountNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     type: {
       type: String,
       enum: ['live', 'paper'],
@@ -41,6 +46,10 @@ const accountSchema = new mongoose.Schema(
       maxlength: 5,
     },
     isDefault: {
+      type: Boolean,
+      default: false,
+    },
+    isArchived: {
       type: Boolean,
       default: false,
     },
