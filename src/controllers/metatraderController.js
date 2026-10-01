@@ -72,6 +72,8 @@ exports.webhookValidators = [
   body('symbol').notEmpty().isString().withMessage('symbol required'),
   body('type').isIn(['buy', 'sell']).withMessage('type must be buy or sell'),
   body('lots').isFloat({ gt: 0 }).withMessage('lots must be positive'),
+  // quantity = lots × contract_size, sent by EA v1.1+; optional for back-compat
+  body('quantity').optional({ nullable: true }).isFloat({ gt: 0 }),
   body('price').isFloat({ gt: 0 }).withMessage('price must be positive'),
   body('time').isISO8601().withMessage('time must be ISO 8601'),
   body('sl').optional({ nullable: true }).isFloat(),
@@ -99,6 +101,7 @@ exports.webhook = async (req, res) => {
     symbol,
     type,
     lots,
+    quantity: rawQuantity, // lots × contract_size, sent by EA v1.1+
     price,
     sl,
     tp,
@@ -112,6 +115,8 @@ exports.webhook = async (req, res) => {
 
   const direction = type === 'buy' ? 'long' : 'short';
   const fees      = Math.abs(Number(commission || 0)) + Math.abs(Number(swap || 0));
+  // Use pre-calculated quantity if EA v1.1+ sent it; fall back to lots for older EAs
+  const quantity  = rawQuantity != null ? Number(rawQuantity) : Number(lots);
 
   // 3. Find the user's default / first account (EA doesn't send accountId)
   let account = await Account.findOne({ userId: auth.userId, isArchived: { $ne: true } });
@@ -146,9 +151,9 @@ exports.webhook = async (req, res) => {
       assetClass:         guessAssetClass(symbol),
       entryDate:          new Date(time),
       entryPrice:         Number(price),
-      quantity:           Number(lots),
-      stopLoss:           sl != null ? Number(sl) : null,
-      takeProfit:         tp != null ? Number(tp) : null,
+      quantity,
+      stopLoss:           sl != null && Number(sl) > 0 ? Number(sl) : null,
+      takeProfit:         tp != null && Number(tp) > 0 ? Number(tp) : null,
       fees,
       status:             'open',
       brokerAccountLabel: auth.token.label,
@@ -165,9 +170,9 @@ exports.webhook = async (req, res) => {
       // EA might have missed the open event — create a full record anyway
       const entryForClose = Number(price);  // best we have if open was missed
       const exitPrice     = Number(close_price);
-      const quantity      = Number(lots);
-      const pnl           = computePnl({ direction, entryPrice: entryForClose, exitPrice, quantity, fees });
-      const rMultiple     = computeRMultiple({ pnl, entryPrice: entryForClose, stopLoss: sl, quantity });
+      // `quantity` already resolved above (lots × contractSize from EA v1.1, or lots for older EA)
+      const pnl       = computePnl({ direction, entryPrice: entryForClose, exitPrice, quantity, fees });
+      const rMultiple = computeRMultiple({ pnl, entryPrice: entryForClose, stopLoss: sl, quantity });
 
       const newTrade = await Trade.create({
         userId:             auth.userId,
@@ -182,8 +187,8 @@ exports.webhook = async (req, res) => {
         entryPrice:         entryForClose,
         exitPrice,
         quantity,
-        stopLoss:           sl != null ? Number(sl) : null,
-        takeProfit:         tp != null ? Number(tp) : null,
+        stopLoss:           sl != null && Number(sl) > 0 ? Number(sl) : null,
+        takeProfit:         tp != null && Number(tp) > 0 ? Number(tp) : null,
         fees,
         status:             'closed',
         pnl,
