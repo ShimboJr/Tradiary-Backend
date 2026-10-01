@@ -37,4 +37,13 @@ const forgotPasswordLimiter = rateLimit({
   message: envelope('Too many reset requests. Please try again in an hour.', 'RESET_RATE_LIMITED'),
 });
 
-module.exports = { globalLimiter, authLimiter, forgotPasswordLimiter };
+/** MetaTrader EA webhook — 10 req/min per IP. A single terminal never needs more. */
+const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: envelope('Too many webhook requests.', 'WEBHOOK_RATE_LIMITED'),
+});
+
+module.exports = { globalLimiter, authLimiter, forgotPasswordLimiter, webhookLimiter };

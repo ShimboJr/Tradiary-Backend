@@ -12,6 +12,7 @@ const watchlistRouter     = require('./watchlist');
 const notificationsRouter = require('./notifications');
 const usersRouter         = require('./users');
 const reportsRouter       = require('./reports');
+const integrationsRouter  = require('./integrations');
 
 const router = express.Router();
 
@@ -28,5 +29,7 @@ router.use('/watchlist',     watchlistRouter);
 router.use('/notifications', notificationsRouter);
 router.use('/users',         usersRouter);
 router.use('/reports',       reportsRouter);
+router.use('/integrations',  integrationsRouter);
 
 module.exports = router;
+

@@ -69,11 +69,32 @@ const tradeSchema = new mongoose.Schema(
     takeProfit: { type: Number, default: null },
     fees:       { type: Number, default: 0, min: 0 },
 
+    // ── Source / integration fields ───────────────────────────────────────────
+
+    source: {
+      type: String,
+      enum: ['manual', 'csv_import', 'metatrader', 'email_import'],
+      default: 'manual',
+    },
+
+    // Broker's ticket / deal ID — used to deduplicate repeated webhook deliveries.
+    // Sparse: only indexed when non-null (manual trades leave this empty).
+    externalId: {
+      type: String,
+      default: null,
+    },
+
+    // Optional nickname / login number for multi-terminal users.
+    brokerAccountLabel: {
+      type: String,
+      default: null,
+    },
+
     // ── Status ───────────────────────────────────────────────────────────────
 
     status: {
       type: String,
-      enum: ['open', 'closed'],
+      enum: ['open', 'closed', 'needs_review'],
       default: 'open',
     },
 
@@ -159,6 +180,8 @@ const tradeSchema = new mongoose.Schema(
 tradeSchema.index({ userId: 1, entryDate: -1 });
 tradeSchema.index({ userId: 1, symbol: 1 });
 tradeSchema.index({ userId: 1, status: 1 });
+// Sparse unique index for deduplication: only enforced when externalId is non-null.
+tradeSchema.index({ userId: 1, externalId: 1 }, { unique: true, sparse: true });
 
 // ─── Pre-save: compute pnl + rMultiple ───────────────────────────────────────
 
