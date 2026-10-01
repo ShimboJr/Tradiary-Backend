@@ -42,11 +42,11 @@ function stripBrokerSuffix(symbol) {
  * Add more here as needed — the rest of the code never needs to change.
  */
 const YAHOO_SYMBOL_MAP = {
-  // ── Metals ──────────────────────────────────────────────────────────────────
-  XAUUSD: 'GC=F',      // Gold
-  XAGUSD: 'SI=F',      // Silver
-  XPTUSD: 'PL=F',      // Platinum
-  XPDUSD: 'PA=F',      // Palladium
+  // ── Metals (spot, not futures — matches forex CFD broker pricing) ────────────
+  XAUUSD: 'XAUUSD=X',   // Gold spot vs USD  (was GC=F futures — now corrected)
+  XAGUSD: 'XAGUSD=X',   // Silver spot vs USD
+  XPTUSD: 'XPTUSD=X',   // Platinum spot
+  XPDUSD: 'XPDUSD=X',   // Palladium spot
 
   // ── Energy ──────────────────────────────────────────────────────────────────
   USOIL:  'CL=F',      // WTI Crude Oil
@@ -207,8 +207,8 @@ async function fetchYahoo(rawSymbol, assetClass, interval, fromMs, toMs) {
 
 // ─── Timeframe maps ───────────────────────────────────────────────────────────
 
-const BINANCE_INTERVAL = { '1m': '1m', '5m': '5m', '15m': '15m', '1h': '1h', '1d': '1d' };
-const YAHOO_INTERVAL   = { '1m': '1m', '5m': '5m', '15m': '15m', '1h': '1h', '1d': '1d' };
+const BINANCE_INTERVAL = { '1m': '1m', '5m': '5m', '15m': '15m', '30m': '30m', '1h': '1h', '1d': '1d' };
+const YAHOO_INTERVAL   = { '1m': '1m', '5m': '5m', '15m': '15m', '30m': '30m', '1h': '60m', '1d': '1d' };
 
 // ─── Provider selector ────────────────────────────────────────────────────────
 
