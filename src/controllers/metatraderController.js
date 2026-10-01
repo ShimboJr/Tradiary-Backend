@@ -67,15 +67,16 @@ function computeRMultiple({ pnl, entryPrice, stopLoss, quantity }) {
 // ─── Payload validators (reuse express-validator) ────────────────────────────
 
 exports.webhookValidators = [
-  body('event').isIn(['trade_open', 'trade_close']).withMessage('event must be trade_open or trade_close'),
+  body('event').isIn(['trade_open', 'trade_close', 'trade_modify']).withMessage('event must be trade_open, trade_close, or trade_modify'),
   body('ticket').notEmpty().isString().withMessage('ticket required'),
   body('symbol').notEmpty().isString().withMessage('symbol required'),
-  body('type').isIn(['buy', 'sell']).withMessage('type must be buy or sell'),
-  body('lots').isFloat({ gt: 0 }).withMessage('lots must be positive'),
+  body('time').isISO8601().withMessage('time must be ISO 8601'),
+  // type / lots / price are NOT sent by the lightweight trade_modify packet
+  body('type').if(body('event').not().equals('trade_modify')).isIn(['buy', 'sell']).withMessage('type must be buy or sell'),
+  body('lots').if(body('event').not().equals('trade_modify')).isFloat({ gt: 0 }).withMessage('lots must be positive'),
   // quantity = lots × contract_size, sent by EA v1.1+; optional for back-compat
   body('quantity').optional({ nullable: true }).isFloat({ gt: 0 }),
-  body('price').isFloat({ gt: 0 }).withMessage('price must be positive'),
-  body('time').isISO8601().withMessage('time must be ISO 8601'),
+  body('price').if(body('event').not().equals('trade_modify')).isFloat({ gt: 0 }).withMessage('price must be positive'),
   body('sl').optional({ nullable: true }).isFloat(),
   body('tp').optional({ nullable: true }).isFloat(),
   body('commission').optional({ nullable: true }).isFloat(),
@@ -163,6 +164,26 @@ exports.webhook = async (req, res) => {
   }
 
 
+  // ─── trade_modify ─────────────────────────────────────────────────────────
+  // Fired when the trader modifies SL/TP on a running instant-order position.
+  // We simply patch the open trade record; no P&L recalculation needed here.
+  if (event === 'trade_modify') {
+    const trade = await Trade.findOne({ userId: auth.userId, externalId: String(ticket), status: 'open' });
+    if (!trade) {
+      // Position may already be closed or was never tracked — silently acknowledge
+      return res.status(200).json({ success: true, data: null });
+    }
+
+    if (sl != null && Number(sl) > 0) trade.stopLoss   = Number(sl);
+    else if (sl === null)             trade.stopLoss   = null;  // SL removed
+    if (tp != null && Number(tp) > 0) trade.takeProfit = Number(tp);
+    else if (tp === null)             trade.takeProfit = null;  // TP removed
+
+    await trade.save(); // pre-save hook will recompute rMultiple if SL changed
+    return res.status(200).json({ success: true, data: { id: trade._id } });
+  }
+
+
   // ─── trade_close ──────────────────────────────────────────────────────────
   if (event === 'trade_close') {
     const trade = await Trade.findOne({ userId: auth.userId, externalId: String(ticket) });
@@ -206,6 +227,10 @@ exports.webhook = async (req, res) => {
     trade.status    = 'closed';
     // fees on close might include swap — add to existing fees
     trade.fees      = (trade.fees || 0) + fees;
+    // Patch SL/TP in case they were set after the instant-order open
+    // (trade_modify keeps them current, but this is the final ground truth)
+    if (sl != null && Number(sl) > 0) trade.stopLoss   = Number(sl);
+    if (tp != null && Number(tp) > 0) trade.takeProfit = Number(tp);
     await trade.save(); // pre-save hook recomputes pnl / rMultiple
 
     crossCheckProfit(trade._id, trade.pnl, brokerProfit);
