@@ -11,5 +11,6 @@ const JournalEntry     = require('./JournalEntry');
 const Goal             = require('./Goal');
 const WatchlistItem    = require('./WatchlistItem');
 const IntegrationToken = require('./IntegrationToken');
+const CandleCache      = require('./CandleCache');
 
-module.exports = { User, Account, Trade, Strategy, JournalEntry, Goal, WatchlistItem, IntegrationToken };
+module.exports = { User, Account, Trade, Strategy, JournalEntry, Goal, WatchlistItem, IntegrationToken, CandleCache };

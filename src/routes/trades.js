@@ -3,7 +3,8 @@
  */
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
-const ctrl = require('../controllers/tradeController');
+const ctrl         = require('../controllers/tradeController');
+const replayCtrl   = require('../controllers/replayController');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -23,5 +24,8 @@ router.post('/',       ctrl.create);
 router.get('/:id',     ctrl.detail);
 router.patch('/:id',   ctrl.update);
 router.delete('/:id',  ctrl.remove);
+
+// ── Replay ──────────────────────────────────────────────────────────────────────
+router.get('/:id/replay-data', replayCtrl.getReplayData);
 
 module.exports = router;
