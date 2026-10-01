@@ -122,37 +122,41 @@ exports.webhook = async (req, res) => {
 
   // ─── trade_open ───────────────────────────────────────────────────────────
   if (event === 'trade_open') {
-    // Upsert by (userId, externalId) — idempotent on duplicate delivery.
-    // IMPORTANT: do NOT add setDefaultsOnInsert:true — Mongoose would inject
-    // schema defaults (e.g. status:'open') via a second MongoDB update operator
-    // that conflicts with the same field already inside $setOnInsert → MongoError
-    // code 40 "ConflictingUpdateOperators". All fields are explicit below.
-    const filter = { userId: auth.userId, externalId: String(ticket) };
-    const update = {
-      $setOnInsert: {
-        userId:             auth.userId,
-        accountId:          account._id,
-        externalId:         String(ticket),
-        source:             'metatrader',
-        symbol:             symbol.toUpperCase(),
-        direction,
-        assetClass:         guessAssetClass(symbol),
-        entryDate:          new Date(time),
-        entryPrice:         Number(price),
-        quantity:           Number(lots),
-        stopLoss:           sl != null ? Number(sl) : null,
-        takeProfit:         tp != null ? Number(tp) : null,
-        fees,
-        status:             'open',
-        brokerAccountLabel: auth.token.label,
-      },
-    };
+    // Idempotent: check first, create only if the ticket doesn't exist yet.
+    //
+    // WHY NOT findOneAndUpdate with upsert?
+    // Mongoose 8 defaults setDefaultsOnInsert=true and injects schema defaults
+    // via $set automatically. When $set and $setOnInsert both touch 'status',
+    // MongoDB throws ConflictingUpdateOperators (code 40) and crashes the request.
+    // A plain findOne + create avoids all update-operator conflicts because the
+    // normal document-creation path (pre-save hooks) handles defaults cleanly.
+    const existing = await Trade.findOne({ userId: auth.userId, externalId: String(ticket) });
+    if (existing) {
+      // Duplicate delivery — respond 200 so the EA doesn't retry forever
+      return res.status(200).json({ success: true, data: { id: existing._id } });
+    }
 
-    const opts = { upsert: true, new: true };
-    const trade = await Trade.findOneAndUpdate(filter, update, opts);
+    const trade = await Trade.create({
+      userId:             auth.userId,
+      accountId:          account._id,
+      externalId:         String(ticket),
+      source:             'metatrader',
+      symbol:             symbol.toUpperCase(),
+      direction,
+      assetClass:         guessAssetClass(symbol),
+      entryDate:          new Date(time),
+      entryPrice:         Number(price),
+      quantity:           Number(lots),
+      stopLoss:           sl != null ? Number(sl) : null,
+      takeProfit:         tp != null ? Number(tp) : null,
+      fees,
+      status:             'open',
+      brokerAccountLabel: auth.token.label,
+    });
 
     return res.status(200).json({ success: true, data: { id: trade._id } });
   }
+
 
   // ─── trade_close ──────────────────────────────────────────────────────────
   if (event === 'trade_close') {
