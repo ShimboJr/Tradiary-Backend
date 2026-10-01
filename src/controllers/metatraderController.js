@@ -122,7 +122,11 @@ exports.webhook = async (req, res) => {
 
   // ─── trade_open ───────────────────────────────────────────────────────────
   if (event === 'trade_open') {
-    // Upsert by (userId, externalId) — idempotent on duplicate delivery
+    // Upsert by (userId, externalId) — idempotent on duplicate delivery.
+    // IMPORTANT: do NOT add setDefaultsOnInsert:true — Mongoose would inject
+    // schema defaults (e.g. status:'open') via a second MongoDB update operator
+    // that conflicts with the same field already inside $setOnInsert → MongoError
+    // code 40 "ConflictingUpdateOperators". All fields are explicit below.
     const filter = { userId: auth.userId, externalId: String(ticket) };
     const update = {
       $setOnInsert: {
@@ -144,7 +148,7 @@ exports.webhook = async (req, res) => {
       },
     };
 
-    const opts = { upsert: true, new: true, setDefaultsOnInsert: true };
+    const opts = { upsert: true, new: true };
     const trade = await Trade.findOneAndUpdate(filter, update, opts);
 
     return res.status(200).json({ success: true, data: { id: trade._id } });

@@ -19,6 +19,14 @@ const { registerWeeklySummaryJob } = require('./jobs/weeklyNotification');
 const app  = express();
 const isProd = process.env.NODE_ENV === 'production';
 
+// ─── Trust Proxy ──────────────────────────────────────────────────────────────
+// Render (and most PaaS/CDN hosts) sit behind a reverse proxy that injects
+// X-Forwarded-For. Without this, express-rate-limit throws a fatal
+// ValidationError (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR) that crashes the
+// entire Node process, taking the server down for all users.
+// '1' means trust exactly one hop (the Render load-balancer).
+app.set('trust proxy', 1);
+
 // ─── Security ─────────────────────────────────────────────────────────────────
 app.use(helmet());
 
