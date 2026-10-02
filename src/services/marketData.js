@@ -42,11 +42,11 @@ function stripBrokerSuffix(symbol) {
  * Add more here as needed — the rest of the code never needs to change.
  */
 const YAHOO_SYMBOL_MAP = {
-  // ── Metals (spot, not futures — matches forex CFD broker pricing) ────────────
-  XAUUSD: 'XAUUSD=X',   // Gold spot vs USD  (was GC=F futures — now corrected)
-  XAGUSD: 'XAGUSD=X',   // Silver spot vs USD
-  XPTUSD: 'XPTUSD=X',   // Platinum spot
-  XPDUSD: 'XPDUSD=X',   // Palladium spot
+  // ── Metals (Yahoo Finance futures — proven to return correct candle data) ────
+  XAUUSD: 'GC=F',      // Gold futures
+  XAGUSD: 'SI=F',      // Silver futures
+  XPTUSD: 'PL=F',      // Platinum futures
+  XPDUSD: 'PA=F',      // Palladium futures
 
   // ── Energy ──────────────────────────────────────────────────────────────────
   USOIL:  'CL=F',      // WTI Crude Oil
