@@ -16,7 +16,8 @@ const notificationSchema = new mongoose.Schema(
 
     type: {
       type: String,
-      enum: ['weekly_summary', 'streak_break', 'goal_achieved', 'general'],
+      enum: ['weekly_summary', 'streak_break', 'goal_achieved', 'general',
+             'trade_auto_resolved', 'trade_needs_review'],
       default: 'general',
     },
 

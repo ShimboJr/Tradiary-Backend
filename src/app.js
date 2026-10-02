@@ -14,7 +14,8 @@ const morgan       = require('morgan');
 const { globalLimiter } = require('./middleware/rateLimiter');
 const errorHandler = require('./middleware/errorHandler');
 const apiRouter    = require('./routes/index');
-const { registerWeeklySummaryJob } = require('./jobs/weeklyNotification');
+const { registerWeeklySummaryJob }    = require('./jobs/weeklyNotification');
+const { registerOrphanedTradeJob }    = require('./jobs/resolveOrphanedTrades');
 
 const app  = express();
 const isProd = process.env.NODE_ENV === 'production';
@@ -83,5 +84,6 @@ app.use(errorHandler);
 // ─── Background Jobs ──────────────────────────────────────────────────────────
 // Register cron jobs after all middleware is set up
 registerWeeklySummaryJob();
+registerOrphanedTradeJob();
 
 module.exports = app;

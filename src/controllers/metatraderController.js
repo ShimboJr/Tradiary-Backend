@@ -82,9 +82,11 @@ exports.webhookValidators = [
   body('commission').optional({ nullable: true }).isFloat(),
   body('swap').optional({ nullable: true }).isFloat(),
   body('profit').optional({ nullable: true }).isFloat(),
-  // Close-only fields
+  // close-only fields
   body('close_price').if(body('event').equals('trade_close')).isFloat({ gt: 0 }).withMessage('close_price required for trade_close'),
   body('close_time').if(body('event').equals('trade_close')).isISO8601().withMessage('close_time must be ISO 8601 for trade_close'),
+  // Optional flag sent by EA v1.3+ on history-sync replays (ignored for business logic; logged only)
+  body('is_history_sync').optional({ nullable: true }).isBoolean(),
 ];
 
 // ─── Webhook handler ──────────────────────────────────────────────────────────
@@ -112,6 +114,7 @@ exports.webhook = async (req, res) => {
     profit: brokerProfit,
     close_price,
     close_time,
+    is_history_sync = false,
   } = req.body;
 
   const direction = type === 'buy' ? 'long' : 'short';
@@ -218,6 +221,9 @@ exports.webhook = async (req, res) => {
       });
 
       crossCheckProfit(newTrade._id, pnl, brokerProfit);
+      if (is_history_sync) {
+        console.log(`[MT bridge] History-sync: created full closed record for trade ${newTrade._id} (${symbol}).`);
+      }
       return res.status(200).json({ success: true, data: { id: newTrade._id } });
     }
 
@@ -232,6 +238,10 @@ exports.webhook = async (req, res) => {
     if (sl != null && Number(sl) > 0) trade.stopLoss   = Number(sl);
     if (tp != null && Number(tp) > 0) trade.takeProfit = Number(tp);
     await trade.save(); // pre-save hook recomputes pnl / rMultiple
+
+    if (is_history_sync) {
+      console.log(`[MT bridge] History-sync close applied for trade ${trade._id} (${symbol}).`);
+    }
 
     crossCheckProfit(trade._id, trade.pnl, brokerProfit);
     return res.status(200).json({ success: true, data: { id: trade._id } });
