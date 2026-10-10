@@ -75,7 +75,7 @@ const userSchema = new mongoose.Schema(
     // User preferences
     timezone: { type: String, default: 'UTC' },
     baseCurrency: { type: String, default: 'USD', uppercase: true, trim: true },
-    theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
+    theme: { type: String, enum: ['dark', 'light'], default: 'light' },
 
     role: {
       type: String,
