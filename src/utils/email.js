@@ -93,8 +93,20 @@ const note = (text) =>
 // Rule: call esc() on ANY value that originates from user input — name, email,
 // URLs stored by the user — before interpolating it into a template.
 
-const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' };
-const esc = (str) => String(str).replace(/[&<>"']/g, (c) => ESC_MAP[c]);
+// HTML entities cover injection into markup; { and } are additionally encoded
+// to break Handlebars/Mustache expressions (e.g. {{8-2}}) before Brevo's
+// template engine sees the htmlContent string. Email clients decode &#x7B; /
+// &#x7D; back to { / } for display, so the user sees the literal text they entered.
+const ESC_MAP = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#x27;',
+  '{': '&#x7B;',
+  '}': '&#x7D;',
+};
+const esc = (str) => String(str).replace(/[&<>"'{}]/g, (c) => ESC_MAP[c]);
 
 // ─── Generic send ─────────────────────────────────────────────────────────────
 
