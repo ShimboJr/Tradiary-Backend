@@ -86,17 +86,34 @@ const h = (text) =>
 const note = (text) =>
   `<p style="margin:16px 0 0;font-size:12px;color:#4a5568;">${text}</p>`;
 
-// ─── Safe text helper ─────────────────────────────────────────────────────────
-// Escape every user-controlled value before it enters an HTML template string.
-// This covers both classic HTML injection AND Handlebars/Mustache template
-// injection (e.g. "{{8-2}}" becomes "{{8-2}}" which no engine evaluates).
-// Rule: call esc() on ANY value that originates from user input — name, email,
-// URLs stored by the user — before interpolating it into a template.
+// ─── Safe text helpers ────────────────────────────────────────────────────────
+//
+// esc(str)
+//   Escapes characters that are dangerous in HTML or in Handlebars/Mustache
+//   template expressions processed by Brevo before delivery:
+//     & < > " '  → standard HTML entities (prevent markup/script injection)
+//     { }        → &#x7B; / &#x7D; (break {{expr}} patterns; email clients
+//                  decode them back to { } for display)
+//
+// safeText(str)
+//   Intended for ANY user-supplied free-text (name, etc.) that will be
+//   rendered inside a visible paragraph.  On top of esc() it also prevents
+//   email clients from auto-linking domain-like strings (e.g. "evil.com"):
+//
+//   Problem: Gmail, Apple Mail and Outlook scan rendered text nodes for
+//   patterns such as "word.tld" and silently wrap them in <a> tags,
+//   regardless of how the surrounding HTML is structured.
+//
+//   Fix (three layers):
+//   1. Insert an empty <span></span> after every dot that is flanked by
+//      word-characters.  This splits the continuous text node so no email
+//      client ever sees a complete "word.tld" sequence to match against.
+//   2. Wrap the whole snippet in
+//        <span x-apple-data-detectors="false"> … </span>
+//      — Apple Mail's explicit opt-out attribute for its data-detector pass.
+//   3. style="text-decoration:none;color:inherit;" so that even if a client
+//      does linkify the text, it is visually indistinguishable from plain text.
 
-// HTML entities cover injection into markup; { and } are additionally encoded
-// to break Handlebars/Mustache expressions (e.g. {{8-2}}) before Brevo's
-// template engine sees the htmlContent string. Email clients decode &#x7B; /
-// &#x7D; back to { / } for display, so the user sees the literal text they entered.
 const ESC_MAP = {
   '&': '&amp;',
   '<': '&lt;',
@@ -107,6 +124,23 @@ const ESC_MAP = {
   '}': '&#x7D;',
 };
 const esc = (str) => String(str).replace(/[&<>"'{}]/g, (c) => ESC_MAP[c]);
+
+/**
+ * safeText(str) — use for every user-controlled value rendered as visible text.
+ * Returns an HTML snippet that is safe to embed directly inside a <p> or <h2>.
+ */
+const safeText = (str) => {
+  // Step 1: HTML-escape and neutralise template expressions.
+  const escaped = esc(str);
+  // Step 2: Break URL-like patterns at every dot between word characters.
+  //   "example.com"  → "example.<span></span>com"
+  //   "foo.bar.baz"  → "foo.<span></span>bar.<span></span>baz"
+  // The empty <span> is invisible to the reader but interrupts the contiguous
+  // text node that auto-link scanners rely on.
+  const broken = escaped.replace(/([\w\u0080-\uFFFF])\.([\w\u0080-\uFFFF])/g, '$1.<span></span>$2');
+  // Step 3: Wrap with Apple Mail opt-out attribute + defensive styling.
+  return `<span x-apple-data-detectors="false" style="text-decoration:none;color:inherit;">${broken}</span>`;
+};
 
 // ─── Generic send ─────────────────────────────────────────────────────────────
 
@@ -138,7 +172,7 @@ const sendEmail = async ({ to, subject, html, text }) => {
 // ─── Email templates ──────────────────────────────────────────────────────────
 
 const sendVerificationEmail = (to, name, verifyUrl) => {
-  const safeName    = esc(name);
+  const safeName    = safeText(name);  // safeText: escapes + breaks auto-link patterns
   const safeEmail   = esc(to);
   const safeUrl     = esc(verifyUrl);
   return sendEmail({
@@ -154,7 +188,7 @@ const sendVerificationEmail = (to, name, verifyUrl) => {
 };
 
 const sendPasswordResetEmail = (to, name, resetUrl) => {
-  const safeName  = esc(name);
+  const safeName  = safeText(name);  // safeText: escapes + breaks auto-link patterns
   const safeUrl   = esc(resetUrl);
   return sendEmail({
     to,
@@ -169,7 +203,7 @@ const sendPasswordResetEmail = (to, name, resetUrl) => {
 };
 
 const sendPasswordChangedEmail = (to, name) => {
-  const safeName  = esc(name);
+  const safeName  = safeText(name);  // safeText: escapes + breaks auto-link patterns
   const safeEmail = esc(to);
   const resetOrigin = esc(process.env.CLIENT_ORIGIN || 'http://localhost:5173');
   return sendEmail({
