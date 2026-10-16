@@ -86,6 +86,16 @@ const h = (text) =>
 const note = (text) =>
   `<p style="margin:16px 0 0;font-size:12px;color:#4a5568;">${text}</p>`;
 
+// ─── Safe text helper ─────────────────────────────────────────────────────────
+// Escape every user-controlled value before it enters an HTML template string.
+// This covers both classic HTML injection AND Handlebars/Mustache template
+// injection (e.g. "{{8-2}}" becomes "{{8-2}}" which no engine evaluates).
+// Rule: call esc() on ANY value that originates from user input — name, email,
+// URLs stored by the user — before interpolating it into a template.
+
+const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' };
+const esc = (str) => String(str).replace(/[&<>"']/g, (c) => ESC_MAP[c]);
+
 // ─── Generic send ─────────────────────────────────────────────────────────────
 
 const sendEmail = async ({ to, subject, html, text }) => {
@@ -115,39 +125,51 @@ const sendEmail = async ({ to, subject, html, text }) => {
 
 // ─── Email templates ──────────────────────────────────────────────────────────
 
-const sendVerificationEmail = (to, name, verifyUrl) =>
-  sendEmail({
+const sendVerificationEmail = (to, name, verifyUrl) => {
+  const safeName    = esc(name);
+  const safeEmail   = esc(to);
+  const safeUrl     = esc(verifyUrl);
+  return sendEmail({
     to,
     subject: 'Verify your Tradiary email address',
     html: template(
       h('Confirm your email') +
-      p(`Hi ${name}, thanks for joining Tradiary! Click the button below to verify your email address. The link expires in <strong>24 hours</strong>.`) +
-      btn(verifyUrl, 'Verify email address') +
-      note(`If you didn't create a Tradiary account, you can safely ignore this email.`)
+      p(`Hi ${safeName}, thanks for joining Tradiary! Click the button below to verify your email address. The link expires in <strong>24 hours</strong>.`) +
+      btn(safeUrl, 'Verify email address') +
+      note(`If you didn't create a Tradiary account (${safeEmail}), you can safely ignore this email.`)
     ),
   });
+};
 
-const sendPasswordResetEmail = (to, name, resetUrl) =>
-  sendEmail({
+const sendPasswordResetEmail = (to, name, resetUrl) => {
+  const safeName  = esc(name);
+  const safeUrl   = esc(resetUrl);
+  return sendEmail({
     to,
     subject: 'Reset your Tradiary password',
     html: template(
       h('Reset your password') +
-      p(`Hi ${name}, we received a request to reset the password for your Tradiary account. Click the button below — the link expires in <strong>1 hour</strong>.`) +
-      btn(resetUrl, 'Reset password') +
+      p(`Hi ${safeName}, we received a request to reset the password for your Tradiary account. Click the button below — the link expires in <strong>1 hour</strong>.`) +
+      btn(safeUrl, 'Reset password') +
       note(`If you didn't request a password reset, you can safely ignore this email. Your password won't change.`)
     ),
   });
-const sendPasswordChangedEmail = (to, name) =>
-  sendEmail({
+};
+
+const sendPasswordChangedEmail = (to, name) => {
+  const safeName  = esc(name);
+  const safeEmail = esc(to);
+  const resetOrigin = esc(process.env.CLIENT_ORIGIN || 'http://localhost:5173');
+  return sendEmail({
     to,
     subject: 'Your Tradiary password has been changed',
     html: template(
       h('Password changed successfully') +
-      p(`Hi ${name}, this is a confirmation that the password for your Tradiary account (<strong>${to}</strong>) was just changed.`) +
+      p(`Hi ${safeName}, this is a confirmation that the password for your Tradiary account (<strong>${safeEmail}</strong>) was just changed.`) +
       p(`If you made this change, no further action is needed.`) +
-      note(`If you did not change your password, your account may be compromised. Please <a href="${process.env.CLIENT_ORIGIN || 'http://localhost:5173'}/forgot-password" style="color:#2a6ef5;">reset your password immediately</a> or contact support.`)
+      note(`If you did not change your password, your account may be compromised. Please <a href="${resetOrigin}/forgot-password" style="color:#2a6ef5;">reset your password immediately</a> or contact support.`)
     ),
   });
+};
 
 module.exports = { sendEmail, sendVerificationEmail, sendPasswordResetEmail, sendPasswordChangedEmail };
